@@ -36,7 +36,6 @@ def benchmark(prefix, batch, seq, N=1):
 
     ctx = tvm.cpu()
     m0 = graph_runtime.graph_executor.create(graph0, lib0, ctx)
-    #m.set_input("input_ids", np.random.randint(0, 30522, size=[1,64]).astype("int32"))
     m0.load_params(params0)
     m0.set_input(**feed_dict)
 
@@ -63,12 +62,14 @@ with open("models.txt") as fh:
     model_names = fh.readlines()
     model_names = [model.rstrip() for model in model_names]
 
+batchs = [1, 4, 64]
 seqs = [32, 64, 128, 256]
-for model_name in model_names:
-    line = "{}".format(model_name)
-    for seq in seqs:
-        model_prefix = "{}/{}-1-{}".format(model_name, model_name, seq)
-        latency = benchmark(model_prefix, 1, seq, N=1000)
-        line += ",{}".format(latency)
-    print(line)
-
+for batch in batchs:
+    print("---------------begin profiling tvm batch={}------------------".format(batch)) 
+    for model_name in model_names:
+        line = "{}".format(model_name)
+        for seq in seqs:
+            model_prefix = "{}/{}-{}-{}".format(model_name, model_name, batch, seq)
+            latency = benchmark(model_prefix, batch, seq, N=100)
+            line += ",{}".format(latency)
+        print(line)

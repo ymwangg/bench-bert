@@ -49,12 +49,14 @@ with open("models.txt") as fh:
     model_names = fh.readlines()
     model_names = [model.rstrip() for model in model_names]
 
+batchs = [1, 4, 64]
 seqs = [32, 64, 128, 256]
-for model_name in model_names:
-    model_path = "{}/{}.onnx".format(model_name, model_name)
-    line = "{}".format(model_name)
-    for seq in seqs:
-        latency = benchmark(model_path, 1, seq, N=1000, no_packing=False)
-        line += ",{}".format(latency)
-    print(line)
-    
+for batch in batchs:
+    print("---------------begin profiling onnx batch={}------------------".format(batch)) 
+    for model_name in model_names:
+        model_path = "{}/{}.onnx".format(model_name, model_name)
+        line = "{}".format(model_name, batch)
+        for seq in seqs:
+            latency = benchmark(model_path, batch, seq, N=100, no_packing=False)
+            line += ",{}".format(latency)
+        print(line)

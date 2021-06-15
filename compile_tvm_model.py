@@ -9,10 +9,13 @@ parser = argparse.ArgumentParser(description="Process input args")
 parser.add_argument("--model", type=str, required=True)
 parser.add_argument("--batch", type=int, required=True)
 parser.add_argument("--seq", type=int, required=True)
+parser.add_argument("--target", type=str, default='llvm -mcpu=skylake-avx512 -libs=mkl,mlas')
 
 args = parser.parse_args()
 model_path = args.model
 batch, seq = args.batch, args.seq
+target = args.target
+print("target = {}".format(target))
 
 prefix = model_path[:-5]
 print(prefix)
@@ -39,7 +42,6 @@ def save_model(lib, prefix):
         fh.write(relay.save_param_dict(lib.params))
 
 mod, par = relay.frontend.from_onnx(model, shape=shape)
-target = 'llvm -mcpu=skylake-avx512 -libs=mkl'
 with relay.build_config(opt_level=3, required_pass=["FastMath"]):
     #executable = relay.vm.compile(mod, params = params, target=target)
     lib = relay.build(mod, params=par, target=target)
