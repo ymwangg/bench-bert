@@ -5,7 +5,7 @@ do
     do
         for seq in 32 64 128 256
         do
-            python compile_tvm_model.py --model $i/$i.onnx --batch $batch --seq $seq --target $1
+            python compile_tvm_model.py --model $i/$i.onnx --batch $batch --seq $seq
         done
     done
 done
