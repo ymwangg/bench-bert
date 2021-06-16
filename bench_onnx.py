@@ -57,6 +57,6 @@ for batch in batchs:
         model_path = "{}/{}.onnx".format(model_name, model_name)
         line = "{}".format(model_name, batch)
         for seq in seqs:
-            latency = benchmark(model_path, batch, seq, N=100, no_packing=False)
+            latency = benchmark(model_path, batch, seq, N=1000, no_packing=False)
             line += ",{}".format(latency)
         print(line)

@@ -70,6 +70,6 @@ for batch in batchs:
         line = "{}".format(model_name)
         for seq in seqs:
             model_prefix = "{}/{}-{}-{}".format(model_name, model_name, batch, seq)
-            latency = benchmark(model_prefix, batch, seq, N=100)
+            latency = benchmark(model_prefix, batch, seq, N=1000)
             line += ",{}".format(latency)
         print(line)
