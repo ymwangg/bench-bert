@@ -41,7 +41,7 @@ def save_model(lib, prefix):
     with open("{}.params".format(prefix), 'wb') as fh:
         fh.write(relay.save_param_dict(lib.params))
 
-mod, par = relay.frontend.from_onnx(model, shape=shape)
+mod, par = relay.frontend.from_onnx(model, shape=shape, freeze_params=True)
 with relay.build_config(opt_level=3, required_pass=["FastMath"]):
     #executable = relay.vm.compile(mod, params = params, target=target)
     lib = relay.build(mod, params=par, target=target)

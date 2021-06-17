@@ -43,26 +43,30 @@ def benchmark(prefix, batch, seq, N=1):
         m0.run()
 
     dt = 0.0
-    for _ in range(N):
-        feed_dict = {
-            'input_ids' : np.random.randint(0, 1000, size=[batch,seq]).astype("int64"),
-            'attention_mask' : np.zeros([batch,seq]).astype("int64"),
-        }
-        if "distilbert" not in prefix and "roberta" not in prefix:
-            feed_dict['token_type_ids'] = np.zeros([batch,seq]).astype("int64")
-        m0.set_input(**feed_dict)
-        t1 = time.time()
-        m0.run()
-        t2 = time.time()
-        dt += t2 - t1
-    inf_time = dt/N*1000
+#    for _ in range(N):
+#        feed_dict = {
+#            'input_ids' : np.random.randint(0, 1000, size=[batch,seq]).astype("int64"),
+#            'attention_mask' : np.zeros([batch,seq]).astype("int64"),
+#        }
+#        if "distilbert" not in prefix and "roberta" not in prefix:
+#            feed_dict['token_type_ids'] = np.zeros([batch,seq]).astype("int64")
+#        m0.set_input(**feed_dict)
+#        t1 = time.time()
+#        m0.run()
+#        m0.get_output(0)
+#        m0.get_output(1)
+#        t2 = time.time()
+#        dt += t2 - t1
+    ftimer = m0.module.time_evaluator("run", ctx, min_repeat_ms=500, repeat=10)
+    dt = np.mean(ftimer().results)
+    inf_time = dt*1000
     return inf_time
 
 with open("models.txt") as fh:
     model_names = fh.readlines()
     model_names = [model.rstrip() for model in model_names]
 
-batchs = [1, 4, 64]
+batchs = [1, 4]
 seqs = [32, 64, 128, 256]
 for batch in batchs:
     print("---------------begin profiling tvm batch={}------------------".format(batch)) 

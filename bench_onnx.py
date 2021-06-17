@@ -49,7 +49,7 @@ with open("models.txt") as fh:
     model_names = fh.readlines()
     model_names = [model.rstrip() for model in model_names]
 
-batchs = [1, 4, 64]
+batchs = [1, 4]
 seqs = [32, 64, 128, 256]
 for batch in batchs:
     print("---------------begin profiling onnx batch={}------------------".format(batch)) 
