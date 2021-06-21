@@ -1,5 +1,9 @@
 #!/bin/bash
+if [ -d "models" ]; then
+    rm -rf ./models
+fi
+mkdir models
 for i in `cat models.txt`
 do
-    bash download_model.sh $i
+    ./download_model.sh $i
 done

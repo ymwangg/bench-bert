@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import onnx
 import numpy as np
 import time
@@ -31,32 +32,39 @@ def benchmark(model_path, batch, seq, N=1, no_packing=False):
         sess.run(output_names, feed_dict)
 
     dt = 0.0
+    t1 = time.time()
     for _ in range(N):
-        feed_dict = {
-            'input_ids' : np.random.randint(0, 1000, size=[batch,seq]).astype("int64"),
-            'attention_mask' : np.zeros([batch,seq]).astype("int64"),
-        }
-        if "distilbert" not in model_path and "roberta" not in model_path:
-            feed_dict['token_type_ids'] = np.zeros([batch,seq]).astype("int64")
-        t1 = time.time()
-        res = sess.run(output_names, feed_dict)
-        t2 = time.time()
-        dt += t2 - t1
+        # feed_dict = {
+        #     'input_ids' : np.random.randint(0, 1000, size=[batch,seq]).astype("int64"),
+        #     'attention_mask' : np.zeros([batch,seq]).astype("int64"),
+        # }
+        # if "distilbert" not in model_path and "roberta" not in model_path:
+        #     feed_dict['token_type_ids'] = np.zeros([batch,seq]).astype("int64")
+        sess.run(output_names, feed_dict)
+    t2 = time.time()
+    dt += t2 - t1
     inf_time = dt/N*1000
     return inf_time
 
-with open("models.txt") as fh:
-    model_names = fh.readlines()
-    model_names = [model.rstrip() for model in model_names]
+parser = argparse.ArgumentParser(description="Process input args")
+parser.add_argument("--model", type=str, required=False)
+args = parser.parse_args()
+model_name = args.model
+if model_name:
+    model_names = [model_name]
+else:
+    with open("models.txt") as fh:
+        model_names = fh.readlines()
+        model_names = [model.rstrip() for model in model_names]
 
 batchs = [1, 4]
 seqs = [32, 64, 128, 256]
 for batch in batchs:
     print("---------------begin profiling onnx batch={}------------------".format(batch)) 
     for model_name in model_names:
-        model_path = "{}/{}.onnx".format(model_name, model_name)
+        model_path = "models/{}/{}.onnx".format(model_name, model_name)
         line = "{}".format(model_name, batch)
         for seq in seqs:
-            latency = benchmark(model_path, batch, seq, N=1000, no_packing=False)
+            latency = benchmark(model_path, batch, seq, N=100, no_packing=False)
             line += ",{}".format(latency)
         print(line)

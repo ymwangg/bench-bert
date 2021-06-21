@@ -33,17 +33,17 @@ else:
         "token_type_ids" : (batch, seq)
     }
 
-def save_model(lib, prefix):
+def save_model(graph, lib, params, prefix):
     prefix = "{}-{}-{}".format(prefix, batch, seq)
     lib.export_library("{}.so".format(prefix))
     with open("{}.json".format(prefix), 'w') as fh:
-        fh.write(lib.graph_json)
+        fh.write(graph)
     with open("{}.params".format(prefix), 'wb') as fh:
-        fh.write(relay.save_param_dict(lib.params))
+        fh.write(relay.save_param_dict(params))
 
 mod, par = relay.frontend.from_onnx(model, shape=shape, freeze_params=True)
 with relay.build_config(opt_level=3, required_pass=["FastMath"]):
     #executable = relay.vm.compile(mod, params = params, target=target)
-    lib = relay.build(mod, params=par, target=target)
+    graph,lib,params = relay.build(mod, params=par, target=target)
 
-save_model(lib, prefix)
+save_model(graph, lib, params, prefix)

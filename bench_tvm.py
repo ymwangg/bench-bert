@@ -1,12 +1,12 @@
+#!/usr/bin/env python
 import tvm
 from tvm import relay
-import onnx
 from tvm.contrib import graph_runtime
 import numpy as np
 import time
 from tvm.contrib.debugger import debug_runtime
 import sys
-
+import argparse
 
 def load_model(prefix):
     lib = tvm.runtime.load_module("{}.so".format(prefix))
@@ -62,9 +62,16 @@ def benchmark(prefix, batch, seq, N=1):
     inf_time = dt*1000
     return inf_time
 
-with open("models.txt") as fh:
-    model_names = fh.readlines()
-    model_names = [model.rstrip() for model in model_names]
+parser = argparse.ArgumentParser(description="Process input args")
+parser.add_argument("--model", type=str, required=False)
+args = parser.parse_args()
+model_name = args.model
+if model_name:
+    model_names = [model_name]
+else:
+    with open("models.txt") as fh:
+        model_names = fh.readlines()
+        model_names = [model.rstrip() for model in model_names]
 
 batchs = [1, 4]
 seqs = [32, 64, 128, 256]
@@ -73,7 +80,7 @@ for batch in batchs:
     for model_name in model_names:
         line = "{}".format(model_name)
         for seq in seqs:
-            model_prefix = "{}/{}-{}-{}".format(model_name, model_name, batch, seq)
+            model_prefix = "models/{}/{}-{}-{}".format(model_name, model_name, batch, seq)
             latency = benchmark(model_prefix, batch, seq, N=1000)
             line += ",{}".format(latency)
         print(line)
