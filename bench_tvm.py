@@ -17,7 +17,7 @@ def load_model(prefix):
     return lib, graph, params
 
 
-def benchmark(prefix, batch, seq, N=1):
+def benchmark(prefix, batch, seq, target, N=1):
     lib0, graph0, params0 = load_model(prefix)
 
     shape = {
@@ -34,7 +34,7 @@ def benchmark(prefix, batch, seq, N=1):
         feed_dict["token_type_ids"] = np.zeros([batch,seq]).astype("int64")
 
 
-    ctx = tvm.cpu()
+    ctx = tvm.device(target)
     m0 = graph_runtime.graph_executor.create(graph0, lib0, ctx)
     m0.load_params(params0)
     m0.set_input(**feed_dict)
@@ -64,8 +64,10 @@ def benchmark(prefix, batch, seq, N=1):
 
 parser = argparse.ArgumentParser(description="Process input args")
 parser.add_argument("--model", type=str, required=False)
+parser.add_argument("--target", type=str, required=True)
 args = parser.parse_args()
 model_name = args.model
+target = args.target
 if model_name:
     model_names = [model_name]
 else:
@@ -81,6 +83,6 @@ for batch in batchs:
         line = "{}".format(model_name)
         for seq in seqs:
             model_prefix = "models/{}/{}-{}-{}".format(model_name, model_name, batch, seq)
-            latency = benchmark(model_prefix, batch, seq, N=100)
+            latency = benchmark(model_prefix, batch, seq, target, N=100)
             line += ",{}".format(latency)
         print(line)

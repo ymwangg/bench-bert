@@ -44,7 +44,8 @@ if backend == "cublas":
         lib = relay.build(mod, params = par, target=target)
 elif backend == "trt":
     from tvm.relay.op.contrib.tensorrt import partition_for_tensorrt
-    mod, config = partition_for_tensorrt(mod, par)
+    #mod, config = partition_for_tensorrt(mod, par, use_implicit_batch=False)
+    mod, config = partition_for_tensorrt(mod, par, use_implicit_batch=True)
     target = 'cuda'
     with tvm.transform.PassContext(opt_level=3, config={'relay.ext.tensorrt.options': config}):
         #executable = relay.vm.compile(mod, params = params, target=target)

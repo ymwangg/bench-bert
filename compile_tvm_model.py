@@ -1,8 +1,10 @@
+#!/usr/bin/env python
 import sys
 import tvm
 from tvm import relay
 import onnx
 import argparse
+from tvm.relay.op.contrib import tensorrt
 
 
 parser = argparse.ArgumentParser(description="Process input args")
@@ -10,12 +12,16 @@ parser.add_argument("--model", type=str, required=True)
 parser.add_argument("--batch", type=int, required=True)
 parser.add_argument("--seq", type=int, required=True)
 parser.add_argument("--target", type=str, default='llvm -mcpu=skylake-avx512 -libs=mkl,mlas')
+parser.add_argument("--use_trt", type=bool, required=False, default=False)
 
 args = parser.parse_args()
-model_path = args.model
+model_name = args.model
+model_path = "models/{}/{}.onnx".format(model_name, model_name)
 batch, seq = args.batch, args.seq
 target = args.target
+use_trt = args.use_trt
 print("target = {}".format(target))
+print("use_trt = {}".format(use_trt))
 
 prefix = model_path[:-5]
 print(prefix)
@@ -42,8 +48,14 @@ def save_model(graph, lib, params, prefix):
         fh.write(relay.save_param_dict(params))
 
 mod, par = relay.frontend.from_onnx(model, shape=shape, freeze_params=True)
-with relay.build_config(opt_level=3, required_pass=["FastMath"]):
-    #executable = relay.vm.compile(mod, params = params, target=target)
-    graph,lib,params = relay.build(mod, params=par, target=target)
+
+if use_trt:
+    from tvm.relay.op.contrib.tensorrt import partition_for_tensorrt
+    mod, config = partition_for_tensorrt(mod, par, use_implicit_batch=False)
+    with tvm.transform.PassContext(opt_level=3, config={'relay.ext.tensorrt.options': config}):
+        graph, lib, params = relay.build(mod, params=par, target=target)
+else:
+    with relay.build_config(opt_level=3, required_pass=["FastMath"]):
+        graph, lib, params = relay.build(mod, params=par, target=target)
 
 save_model(graph, lib, params, prefix)
