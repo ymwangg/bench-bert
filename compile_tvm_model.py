@@ -23,13 +23,14 @@ use_trt = args.use_trt
 model_type = args.model_type
 if model_type == "onnx":
     model_path = "models/{}/{}.onnx".format(model_name, model_name)
+    prefix = "models/{}/{}".format(model_name, model_name)
 else:
     model_path = "pt_models/{}/{}.pt".format(model_name, model_name)
+    prefix = "pt_models/{}/{}".format(model_name, model_name)
 print("model_type = {}".format(model_type))
 print("target = {}".format(target))
 print("use_trt = {}".format(use_trt))
 
-prefix = model_path[:-5]
 print(prefix)
 
 if "distilbert" in model_path or "roberta" in model_path:

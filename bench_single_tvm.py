@@ -66,11 +66,16 @@ parser.add_argument("--model", type=str, required=True)
 parser.add_argument("--batch", type=int, required=True)
 parser.add_argument("--seq", type=int, required=True)
 parser.add_argument("--target", type=str, required=True)
+parser.add_argument("--model_type", type=str, required=True)
 args = parser.parse_args()
 model_name = args.model
 batch = args.batch
 seq = args.seq
 target = args.target
-model_prefix = "models/{}/{}-{}-{}".format(model_name, model_name, batch, seq)
+model_type = args.model_type
+if model_type == "onnx":
+    model_prefix = "models/{}/{}-{}-{}".format(model_name, model_name, batch, seq)
+else:
+    model_prefix = "pt_models/{}/{}-{}-{}".format(model_name, model_name, batch, seq)
 latency = benchmark(model_prefix, batch, seq, target, N=100)
 print(model_name, batch, seq, latency)
