@@ -5,7 +5,7 @@ from tvm import relay
 import onnx
 import argparse
 from tvm.relay.op.contrib import tensorrt
-
+import torch
 
 parser = argparse.ArgumentParser(description="Process input args")
 parser.add_argument("--model", type=str, required=True)
@@ -13,19 +13,24 @@ parser.add_argument("--batch", type=int, required=True)
 parser.add_argument("--seq", type=int, required=True)
 parser.add_argument("--target", type=str, default='llvm -mcpu=skylake-avx512 -libs=mkl,mlas')
 parser.add_argument("--use_trt", type=bool, required=False, default=False)
+parser.add_argument("--model_type", type=str, default='onnx', required=False)
 
 args = parser.parse_args()
 model_name = args.model
-model_path = "models/{}/{}.onnx".format(model_name, model_name)
 batch, seq = args.batch, args.seq
 target = args.target
 use_trt = args.use_trt
+model_type = args.model_type
+if model_type == "onnx":
+    model_path = "models/{}/{}.onnx".format(model_name, model_name)
+else:
+    model_path = "pt_models/{}/{}.pt".format(model_name, model_name)
+print("model_type = {}".format(model_type))
 print("target = {}".format(target))
 print("use_trt = {}".format(use_trt))
 
 prefix = model_path[:-5]
 print(prefix)
-model = onnx.load(model_path)
 
 if "distilbert" in model_path or "roberta" in model_path:
     shape = {
@@ -47,7 +52,15 @@ def save_model(graph, lib, params, prefix):
     with open("{}.params".format(prefix), 'wb') as fh:
         fh.write(relay.save_param_dict(params))
 
-mod, par = relay.frontend.from_onnx(model, shape=shape, freeze_params=True)
+if model_type == "onnx":
+    model = onnx.load(model_path)
+    mod, par = relay.frontend.from_onnx(model, shape=shape, freeze_params=True)
+elif model_type == "pt" or model_type == "pytorch":
+    model = torch.jit.load(model_path)
+    model.eval()
+    for p in model.parameters():
+        p.requires_grad_(False)
+    mod, par = relay.frontend.from_pytorch(model, [(k,v) for k,v in shape.items()], default_dtype="float32")
 
 if use_trt:
     from tvm.relay.op.contrib.tensorrt import partition_for_tensorrt
