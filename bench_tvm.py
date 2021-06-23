@@ -17,7 +17,7 @@ def load_model(prefix):
     return lib, graph, params
 
 
-def benchmark(prefix, batch, seq, target, N=1):
+def benchmark(prefix, batch, seq, device, N=1):
     lib0, graph0, params0 = load_model(prefix)
 
     shape = {
@@ -34,7 +34,13 @@ def benchmark(prefix, batch, seq, target, N=1):
         feed_dict["token_type_ids"] = np.zeros([batch,seq]).astype("int64")
 
 
-    ctx = tvm.device(target)
+    if device == "cpu":
+        ctx = tvm.cpu(0)
+    elif device == "gpu":
+        ctx = tvm.cuda(0)
+    else:
+        raise RuntimeError("Unknown device={}".format(device))
+
     m0 = graph_runtime.graph_executor.create(graph0, lib0, ctx)
     m0.load_params(params0)
     m0.set_input(**feed_dict)
@@ -64,10 +70,12 @@ def benchmark(prefix, batch, seq, target, N=1):
 
 parser = argparse.ArgumentParser(description="Process input args")
 parser.add_argument("--model", type=str, required=False)
-parser.add_argument("--target", type=str, required=True)
+parser.add_argument("--device", type=str, required=True)
+parser.add_argument("--model_type", type=str, required=True)
 args = parser.parse_args()
 model_name = args.model
-target = args.target
+device = args.device
+model_type = args.model_type
 if model_name:
     model_names = [model_name]
 else:
@@ -78,11 +86,14 @@ else:
 batchs = [1, 4]
 seqs = [32, 64, 128, 256]
 for batch in batchs:
-    print("---------------begin profiling tvm batch={}------------------".format(batch)) 
+    print("---------------begin profiling {}-tvm batch={}------------------".format(model_type, batch)) 
     for model_name in model_names:
         line = "{}".format(model_name)
         for seq in seqs:
-            model_prefix = "models/{}/{}-{}-{}".format(model_name, model_name, batch, seq)
-            latency = benchmark(model_prefix, batch, seq, target, N=100)
+            if model_type == "onnx":
+                model_prefix = "models/{}/{}-{}-{}".format(model_name, model_name, batch, seq)
+            else:
+                model_prefix = "pt_models/{}/{}-{}-{}".format(model_name, model_name, batch, seq)
+            latency = benchmark(model_prefix, batch, seq, device, N=100)
             line += ",{}".format(latency)
         print(line)
