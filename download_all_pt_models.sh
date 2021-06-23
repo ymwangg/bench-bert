@@ -5,5 +5,5 @@ fi
 mkdir models
 for i in `cat models.txt`
 do
-    ./download_model.sh $i
+    ./download_pt_model.sh $i
 done
