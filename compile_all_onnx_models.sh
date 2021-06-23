@@ -5,7 +5,7 @@ do
     do
         for seq in 32 64 128 256
         do
-            python compile_tvm_model.py --model $i --batch $batch --seq $seq --target "cuda" --use_trt True
+            python compile_tvm_model.py --model $i --batch $batch --seq $seq --target "llvm -mcpu=skylake-avx512 -libs=mkl,mlas" --model_type onnx
         done
     done
 done
