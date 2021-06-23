@@ -12,13 +12,13 @@ def benchmark(model_path, batch, seq, N=1):
         "attention_mask" : (batch, seq),
     }
 
-    feed_dict = {
-        'input_ids' : torch.tensor(np.random.randint(0, 10000, size=[batch,seq]).astype("int64")),
-        'attention_mask' : torch.tensor(np.zeros([batch,seq]).astype("int64")),
-    }
+    feed_dict = [
+        torch.tensor(np.random.randint(0, 10000, size=[batch,seq]).astype("int64")),
+        torch.tensor(np.zeros([batch,seq]).astype("int64"))
+    ]
     if "distilbert" not in model_path and "roberta" not in model_path:
         shape["token_type_ids"] = (batch, seq)
-        feed_dict["token_type_ids"] = torch.tensor(np.zeros([batch,seq]).astype("int64"))
+        feed_dict.append(torch.tensor(np.zeros([batch,seq]).astype("int64")))
 
     loaded_model = torch.jit.load(model_path)
     loaded_model.eval()
@@ -26,12 +26,12 @@ def benchmark(model_path, batch, seq, N=1):
         p.requires_grad_(False)
 
     for _ in range(10):
-        res = loaded_model(feed_dict['input_ids'], feed_dict['attention_mask'], feed_dict['token_type_ids'])
+        res = loaded_model(*feed_dict)
 
     dt = 0.0
     t1 = time.time()
     for _ in range(N):
-        res = loaded_model(feed_dict['input_ids'], feed_dict['attention_mask'], feed_dict['token_type_ids'])
+        res = loaded_model(*feed_dict)
     t2 = time.time()
     dt += t2 - t1
     inf_time = dt/N*1000
