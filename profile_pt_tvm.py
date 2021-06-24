@@ -65,7 +65,7 @@ if "distilbert" not in model_path and "roberta" not in model_path:
 else:
     input = [torch.tensor(feed_dict['input_ids'].astype("int64")), torch.tensor(feed_dict['attention_mask'].astype("int64"))]
 
-N = 1000
+N = 100
 t1 = time.time()
 for _ in range(N):
     pt_res = model(*input)
@@ -104,4 +104,4 @@ def benchmark(model_path, batch, seq, N=1):
     inf_time = dt/N*1000
     return inf_time
 print(model_path, batch, seq)
-print(benchmark(model_path, batch, seq, N=1000))
+print(benchmark(model_path, batch, seq, N=100))
