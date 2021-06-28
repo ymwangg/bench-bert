@@ -15,7 +15,7 @@ def benchmark(model_path, batch, seq, N=1, no_packing=False):
 
     feed_dict = {
         'input_ids' : np.random.randint(0, 10000, size=[batch,seq]).astype("int64"),
-        'attention_mask' : np.zeros([batch,seq]).astype("int64"),
+        'attention_mask' : np.ones([batch,seq]).astype("int64"),
     }
     if "distilbert" not in model_path and "roberta" not in model_path:
         shape["token_type_ids"] = (batch, seq)

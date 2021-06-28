@@ -27,7 +27,7 @@ def benchmark(prefix, batch, seq, target, N=1):
 
     feed_dict = {
         'input_ids' : np.random.randint(0, 10000, size=[batch,seq]).astype("int64"),
-        'attention_mask' : np.zeros([batch,seq]).astype("int64"),
+        'attention_mask' : np.ones([batch,seq]).astype("int64"),
     }
     if "distilbert" not in prefix and "roberta" not in prefix:
         shape["token_type_ids"] = (batch, seq)

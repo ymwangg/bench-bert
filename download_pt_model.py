@@ -34,7 +34,7 @@ feed_dict = {
     "input_ids": torch.tensor(
         np.random.randint(0, 10000, size=[batch, seq]).astype("int64")
     ),
-    "attention_mask": torch.tensor(np.zeros([batch, seq]).astype("int64")),
+    "attention_mask": torch.tensor(np.ones([batch, seq]).astype("int64")),
 }
 
 if "distilbert" not in model_name and "roberta" not in model_name:

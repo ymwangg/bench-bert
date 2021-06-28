@@ -14,7 +14,7 @@ def benchmark(model_path, batch, seq, N=1):
 
     feed_dict = [
         torch.tensor(np.random.randint(0, 10000, size=[batch,seq]).astype("int64")),
-        torch.tensor(np.zeros([batch,seq]).astype("int64"))
+        torch.tensor(np.ones([batch,seq]).astype("int64"))
     ]
     if "distilbert" not in model_path and "roberta" not in model_path:
         shape["token_type_ids"] = (batch, seq)

@@ -25,7 +25,7 @@ shape = {
 
 feed_dict = {
     'input_ids' : np.random.randint(0, 10000, size=[batch,seq]).astype("int64"),
-    'attention_mask' : np.zeros([batch,seq]).astype("int64"),
+    'attention_mask' : np.ones([batch,seq]).astype("int64"),
 }
 if "distilbert" not in model_path and "roberta" not in model_path:
     shape["token_type_ids"] = (batch, seq)
@@ -53,12 +53,12 @@ time.sleep(1)
 ftimer = m.module.time_evaluator("run", ctx, min_repeat_ms=500, repeat=10)
 dt = np.mean(ftimer().results)
 print("tvm_time = {}".format(dt*1000))
-tvm_res = m.get_output(1).asnumpy()
+tvm_res = m.get_output(0).asnumpy()
 print("tvm_res sum = {}".format(np.sum(tvm_res)))
 
-debug_m = debug_runtime.create(lib.graph_json, lib.lib, ctx)
-debug_m.set_input(**feed_dict)
-debug_m.run()
+#debug_m = debug_runtime.create(lib.graph_json, lib.lib, ctx)
+#debug_m.set_input(**feed_dict)
+#debug_m.run()
 
 if "distilbert" not in model_path and "roberta" not in model_path:
     input = [torch.tensor(feed_dict['input_ids'].astype("int64")), torch.tensor(feed_dict['attention_mask'].astype("int64")), torch.tensor(feed_dict['token_type_ids'].astype("int64"))]
@@ -72,7 +72,7 @@ for _ in range(N):
 t2 = time.time()
 dt = t2 - t1
 print("pt_time = {}".format(dt/N*1000))
-print("pt_res sum = {}".format(np.sum(np.array(pt_res[1]))))
+print("pt_res sum = {}".format(np.sum(np.array(pt_res[0]))))
 
 def benchmark(model_path, batch, seq, N=1):
     shape = {
