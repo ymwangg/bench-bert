@@ -10,7 +10,7 @@ import sys
 import argparse
 
 parser = argparse.ArgumentParser(description="Process input args")
-parser.add_argument("--model", type=str, required=False)
+parser.add_argument("--model", type=str, required=True)
 parser.add_argument("--batch", type=int, required=True)
 parser.add_argument("--seq", type=int, required=True)
 parser.add_argument("--backend", type=str, required=False, default="cublas")
@@ -66,9 +66,9 @@ print("tvm_time({}) = {}".format(backend, dt*1000))
 tvm_res = m.get_output(1).asnumpy()
 print("tvm_res sum = {}".format(np.sum(tvm_res)))
 
-#debug_m = debug_runtime.create(lib.graph_json, lib.lib, ctx)
-#debug_m.set_input(**feed_dict)
-#debug_m.run()
+debug_m = debug_runtime.create(lib.graph_json, lib.lib, ctx)
+debug_m.set_input(**feed_dict)
+debug_m.run()
 
 import onnxruntime as rt
 N = 1000
