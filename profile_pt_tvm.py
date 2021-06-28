@@ -56,9 +56,9 @@ print("tvm_time = {}".format(dt*1000))
 tvm_res = m.get_output(1).asnumpy()
 print("tvm_res sum = {}".format(np.sum(tvm_res)))
 
-#debug_m = debug_runtime.create(lib.graph_json, lib.lib, ctx)
-#debug_m.set_input(**feed_dict)
-#debug_m.run()
+debug_m = debug_runtime.create(lib.graph_json, lib.lib, ctx)
+debug_m.set_input(**feed_dict)
+debug_m.run()
 
 if "distilbert" not in model_path and "roberta" not in model_path:
     input = [torch.tensor(feed_dict['input_ids'].astype("int64")), torch.tensor(feed_dict['attention_mask'].astype("int64")), torch.tensor(feed_dict['token_type_ids'].astype("int64"))]
