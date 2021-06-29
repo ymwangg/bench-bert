@@ -19,8 +19,10 @@ MODEL_MAP = {
 
 parser = argparse.ArgumentParser(description="Process input args")
 parser.add_argument("--model", type=str, required=True)
+parser.add_argument("--backend", type=str, required=False, default="cpu")
 args = parser.parse_args()
 model_name = args.model
+backend = args.backend
 print("--------------------Download {}.pt--------------------".format(model_name))
 model = MODEL_MAP[model_name].from_pretrained(model_name, torchscript=True)
 
@@ -40,17 +42,33 @@ feed_dict = {
 if "distilbert" not in model_name and "roberta" not in model_name:
     shape["token_type_ids"] = (batch, seq)
     feed_dict["token_type_ids"] = torch.tensor(np.zeros([batch, seq]).astype("int64"))
-    traced_model = torch.jit.trace(
-        model,
-        [
-            feed_dict["input_ids"],
-            feed_dict["attention_mask"],
-            feed_dict["token_type_ids"],
-        ],
-    )
+    if backend == "cpu":
+        traced_model = torch.jit.trace(
+            model,
+            [
+                feed_dict["input_ids"],
+                feed_dict["attention_mask"],
+                feed_dict["token_type_ids"],
+            ],
+        )
+    else:
+        traced_model = torch.jit.trace(
+            model.cuda(),
+            [
+                feed_dict["input_ids"].cuda(),
+                feed_dict["attention_mask"].cuda(),
+                feed_dict["token_type_ids"].cuda(),
+            ],
+        )
+
 else:
-    traced_model = torch.jit.trace(
-        model, [feed_dict["input_ids"], feed_dict["attention_mask"]]
-    )
+    if backend == "cpu":
+        traced_model = torch.jit.trace(
+            model, [feed_dict["input_ids"], feed_dict["attention_mask"]]
+        )
+    else:
+        traced_model = torch.jit.trace(
+            model.cuda(), [feed_dict["input_ids"].cuda(), feed_dict["attention_mask"].cuda()]
+        )
 
 torch.jit.save(traced_model, "pt_models/{}/{}.pt".format(model_name, model_name))
