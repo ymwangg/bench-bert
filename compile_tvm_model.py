@@ -21,12 +21,14 @@ batch, seq = args.batch, args.seq
 target = args.target
 use_trt = args.use_trt
 model_type = args.model_type
+
 if model_type == "onnx":
     model_path = "models/{}/{}.onnx".format(model_name, model_name)
     prefix = "models/{}/{}".format(model_name, model_name)
 else:
     model_path = "pt_models/{}/{}.pt".format(model_name, model_name)
     prefix = "pt_models/{}/{}".format(model_name, model_name)
+print("--------------------Compiling {}--------------------".format(model_path))
 print("model_type = {}".format(model_type))
 print("target = {}".format(target))
 print("use_trt = {}".format(use_trt))
