@@ -25,7 +25,7 @@ shape = {
 
 feed_dict = {
     'input_ids' : np.random.randint(0, 10000, size=[batch,seq]).astype("int64"),
-    'attention_mask' : np.zeros([batch,seq]).astype("int64"),
+    'attention_mask' : np.ones([batch,seq]).astype("int64"),
 }
 if "distilbert" not in model_path and "roberta" not in model_path:
     shape["token_type_ids"] = (batch, seq)
@@ -34,30 +34,23 @@ if "distilbert" not in model_path and "roberta" not in model_path:
 options = rt.SessionOptions()
 #options.add_session_config_entry('session.disable_prepacking', '1')
 #options.enable_profiling = True
-if backend == "mkl":
-    sess = rt.InferenceSession(model_path, options, providers=['DnnlExecutionProvider'])
-    print("using mkl")
-elif backend == "cpu":
-    sess = rt.InferenceSession(model_path, options, providers=['CPUExecutionProvider'])
-    print("using cpu")
+sess = rt.InferenceSession(model_path, options, providers=['CUDAExecutionProvider'])
+#if backend == "mkl":
+#    sess = rt.InferenceSession(model_path, options, providers=['DnnlExecutionProvider'])
+#    print("using mkl")
+#elif backend == "cpu":
+#    sess = rt.InferenceSession(model_path, options, providers=['CPUExecutionProvider'])
+#    print("using cpu")
 
 model = onnx.load(model_path)
 output_names = [out.name for out in model.graph.output]
-#sess = rt.InferenceSession(model_path, options)
 sess.run(output_names, feed_dict)
 
-dt = 0.0
+t1 = time.time()
 for _ in range(N):
-    feed_dict = {
-        'input_ids' : np.random.randint(0, 1000, size=[batch,seq]).astype("int64"),
-        'attention_mask' : np.zeros([batch,seq]).astype("int64"),
-    }
-    if "distilbert" not in model_path and "roberta" not in model_path:
-        feed_dict['token_type_ids'] = np.zeros([batch,seq]).astype("int64")
-    t1 = time.time()
     res = sess.run(output_names, feed_dict)
-    t2 = time.time()
-    dt += t2 - t1
+t2 = time.time()
+dt = t2 - t1
 print(dt/N*1000)
 #sess.disable_profiling()
-#print("onnx_res sum=", np.sum(onnx_res[1]))
+print("onnx_res sum=", np.sum(onnx_res[0]))
