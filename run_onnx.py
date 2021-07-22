@@ -13,7 +13,8 @@ parser.add_argument("--seq", type=int, required=True)
 parser.add_argument("--N", type=int, default=1000, required=False)
 
 args = parser.parse_args()
-model_path = args.model
+model_name = args.model
+model_path = "models/{}/{}.onnx".format(model_name, model_name)
 backend = args.backend
 batch, seq = args.batch, args.seq
 N = args.N
@@ -33,6 +34,7 @@ if "distilbert" not in model_path and "roberta" not in model_path:
 
 options = rt.SessionOptions()
 #options.add_session_config_entry('session.disable_prepacking', '1')
+options.graph_optimization_level = rt.GraphOptimizationLevel.ORT_DISABLE_ALL
 #options.enable_profiling = True
 sess = rt.InferenceSession(model_path, options, providers=['CUDAExecutionProvider'])
 #if backend == "mkl":
@@ -48,7 +50,7 @@ sess.run(output_names, feed_dict)
 
 t1 = time.time()
 for _ in range(N):
-    res = sess.run(output_names, feed_dict)
+    onnx_res = sess.run(output_names, feed_dict)
 t2 = time.time()
 dt = t2 - t1
 print(dt/N*1000)

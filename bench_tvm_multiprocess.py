@@ -7,6 +7,7 @@ import time
 from tvm.contrib.debugger import debug_runtime
 import sys
 import argparse
+import multiprocessing
 
 
 def load_model(prefix):
@@ -18,7 +19,7 @@ def load_model(prefix):
     return lib, graph, params
 
 
-def benchmark(prefix, batch, seq, device, N=1):
+def benchmark(prefix, batch, seq, device, N, ret_latency):
     lib0, graph0, params0 = load_model(prefix)
 
     shape = {
@@ -57,6 +58,7 @@ def benchmark(prefix, batch, seq, device, N=1):
     ftimer = m0.module.time_evaluator("run", ctx, min_repeat_ms=500, repeat=10)
     dt = np.mean(ftimer().results)
     inf_time = dt * 1000
+    ret_latency.value = inf_time
     return inf_time
 
 
@@ -104,6 +106,11 @@ for batch in batches:
                 model_prefix = "pt_models/{}/{}-{}-{}".format(
                     model_name, model_name, batch, seq
                 )
-            latency = benchmark(model_prefix, batch, seq, backend, N=N)
-            line += ",{}".format(latency)
+            latency = multiprocessing.Value('d', 0.0, lock=False)
+            p = multiprocessing.Process(target=benchmark, args=[model_prefix, batch, seq, backend, N, latency])
+            p.start()
+            p.join()
+            p.close()
+            #latency = benchmark(model_prefix, batch, seq, backend, N=N)
+            line += ",{}".format(latency.value)
         print(line)

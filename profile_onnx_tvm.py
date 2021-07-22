@@ -51,32 +51,37 @@ print("done compilation")
 ctx = tvm.device(target)
 m = graph_executor.GraphModule(lib["default"](ctx))
 m.run(**feed_dict)
-for _ in range(10):
+N = 1000
+t1 = time.time()
+for _ in range(N):
     m.run()
-time.sleep(1)
-ftimer = m.module.time_evaluator("run", ctx, min_repeat_ms=500, repeat=10)
-dt = np.mean(ftimer().results)
-print("tvm_time = {}".format(dt*1000))
+t2 = time.time()
+dt = t2 - t1
+print("tvm_time = {}".format(dt/N*1000))
+# time.sleep(1)
+# ftimer = m.module.time_evaluator("run", ctx, min_repeat_ms=500, repeat=10)
+# dt = np.mean(ftimer().results)
+# print("tvm_time = {}".format(dt*1000))
 tvm_res = m.get_output(0).asnumpy()
 print("tvm_res sum = {}".format(np.sum(tvm_res)))
 
-#debug_m = debug_runtime.create(lib.graph_json, lib.lib, ctx)
-#debug_m.set_input(**feed_dict)
-#debug_m.run()
+# debug_m = debug_runtime.create(lib.graph_json, lib.lib, ctx)
+# debug_m.set_input(**feed_dict)
+# debug_m.run()
 
 
 # onnxruntime
-N = 100
-output_names = [out.name for out in model.graph.output]
-options = rt.SessionOptions()
-sess = rt.InferenceSession(model_path, options)
+# N = 1000
+# output_names = [out.name for out in model.graph.output]
+# options = rt.SessionOptions()
+# sess = rt.InferenceSession(model_path, options)
 
-for _ in range(10):
-    sess.run(output_names, feed_dict)
+# for _ in range(10):
+#    sess.run(output_names, feed_dict)
 
-t1 = time.time()
-for _ in range(N):
-    onnx_res = sess.run(output_names, feed_dict)
-t2 = time.time()
-print("onnx_time = {}".format((t2 - t1)/N*1000))
-print("onnx_res sum = {}".format(np.sum(onnx_res[0])))
+# t1 = time.time()
+# for _ in range(N):
+#    onnx_res = sess.run(output_names, feed_dict)
+# t2 = time.time()
+# print("onnx_time = {}".format((t2 - t1)/N*1000))
+# print("onnx_res sum = {}".format(np.sum(onnx_res[0])))

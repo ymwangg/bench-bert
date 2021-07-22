@@ -55,8 +55,33 @@ def compile(model_name, batch, seq, target, use_trt, model_type):
         mod, par = relay.frontend.from_pytorch(
             model, [(k, v) for k, v in shape.items()], default_dtype="float32"
         )
+    from tvm.relay.dataflow_pattern import DFPatternCallback, wildcard, is_expr, rewrite, is_op
+    class LayerNormRewrite(DFPatternCallback):
+        def __init__(self):
+            super(LayerNormRewrite, self).__init__()
+            self.x = wildcard()
+            self.gamma = wildcard()
+            self.beta = wildcard()
+            self.epsilon = wildcard()
+            mean = is_op("mean")
+            power = is_op("power")
+            sqrt = is_op("sqrt")
+            expr_a = self.x - mean(self.x)
+            expr_b = sqrt(mean(power(expr_a, is_expr(relay.const(2.0)))) + self.epsilon)
+            expr_c = expr_a / expr_b * self.gamma + self.beta
+            self.pattern = expr_c
+
+        def callback(self, pre, post, node_map):
+            new_x = node_map[self.x][0]
+            new_gamma = node_map[self.gamma][0]
+            new_beta = node_map[self.beta][0]
+            new_epsilon = float(node_map[self.epsilon][0].data.asnumpy())
+            return relay.nn.layer_norm(new_x, new_gamma, new_beta, epsilon=new_epsilon)
+    #expr = rewrite(LayerNormRewrite(), mod['main'])
+    #mod = tvm.IRModule.from_expr(expr)
 
     if use_trt:
+        print("using trt")
         from tvm.relay.op.contrib.tensorrt import partition_for_tensorrt
 
         mod, config = partition_for_tensorrt(mod, par, use_implicit_batch=False)

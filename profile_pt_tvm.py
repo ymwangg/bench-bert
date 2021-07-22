@@ -42,8 +42,8 @@ for p in model.parameters():
     p.requires_grad_(False)
 mod, par = relay.frontend.from_pytorch(model, [(k,v) for k,v in shape.items()], default_dtype="float32")
 
-#target = 'cuda -libs=cublas'
-target = 'llvm -mcpu=skylake-avx512 -libs=mkl,mlas'
+target = 'cuda -libs=cublas'
+#target = 'llvm -mcpu=skylake-avx512 -libs=mkl,mlas'
 with relay.build_config(opt_level=3, required_pass=["FastMath"]):
     lib = relay.build(mod, params=par, target=target)
 
@@ -65,30 +65,30 @@ print("tvm_res sum = {}".format(np.sum(tvm_res)))
 #debug_m.set_input(**feed_dict)
 #debug_m.run()
 
-if backend == "cpu":
-    if "distilbert" not in model_path and "roberta" not in model_path:
-        feed_dict = [torch.tensor(feed_dict['input_ids'].astype("int64")), torch.tensor(feed_dict['attention_mask'].astype("int64")), torch.tensor(feed_dict['token_type_ids'].astype("int64"))]
-    else:
-        feed_dict = [torch.tensor(feed_dict['input_ids'].astype("int64")), torch.tensor(feed_dict['attention_mask'].astype("int64"))]
-else:
-    if "distilbert" not in model_path and "roberta" not in model_path:
-        feed_dict = [torch.tensor(feed_dict['input_ids'].astype("int64")).cuda(), torch.tensor(feed_dict['attention_mask'].astype("int64")).cuda(), torch.tensor(feed_dict['token_type_ids'].astype("int64")).cuda()]
-    else:
-        feed_dict = [torch.tensor(feed_dict['input_ids'].astype("int64")).cuda(), torch.tensor(feed_dict['attention_mask'].astype("int64")).cuda()]
-
-for _ in range(10):
-    pt_res = model(*feed_dict)
-
-N = 100
-t1 = time.time()
-for _ in range(N):
-    pt_res = model(*feed_dict)
-t2 = time.time()
-dt = t2 - t1
-
-print("pt_time = {}".format(dt/N*1000))
-if backend == "cpu":
-    pt_res = np.array(pt_res[0])
-else:
-    pt_res = np.array(pt_res[0].cpu())
-print("pt_res sum = {}".format(np.sum(pt_res)))
+#if backend == "cpu":
+#    if "distilbert" not in model_path and "roberta" not in model_path:
+#        feed_dict = [torch.tensor(feed_dict['input_ids'].astype("int64")), torch.tensor(feed_dict['attention_mask'].astype("int64")), torch.tensor(feed_dict['token_type_ids'].astype("int64"))]
+#    else:
+#        feed_dict = [torch.tensor(feed_dict['input_ids'].astype("int64")), torch.tensor(feed_dict['attention_mask'].astype("int64"))]
+#else:
+#    if "distilbert" not in model_path and "roberta" not in model_path:
+#        feed_dict = [torch.tensor(feed_dict['input_ids'].astype("int64")).cuda(), torch.tensor(feed_dict['attention_mask'].astype("int64")).cuda(), torch.tensor(feed_dict['token_type_ids'].astype("int64")).cuda()]
+#    else:
+#        feed_dict = [torch.tensor(feed_dict['input_ids'].astype("int64")).cuda(), torch.tensor(feed_dict['attention_mask'].astype("int64")).cuda()]
+#
+#for _ in range(10):
+#    pt_res = model(*feed_dict)
+#
+#N = 100
+#t1 = time.time()
+#for _ in range(N):
+#    pt_res = model(*feed_dict)
+#t2 = time.time()
+#dt = t2 - t1
+#
+#print("pt_time = {}".format(dt/N*1000))
+#if backend == "cpu":
+#    pt_res = np.array(pt_res[0])
+#else:
+#    pt_res = np.array(pt_res[0].cpu())
+#print("pt_res sum = {}".format(np.sum(pt_res)))
